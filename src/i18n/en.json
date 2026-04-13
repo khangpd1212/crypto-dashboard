@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "Crypto Dashboard",
+    "loading": "Loading...",
+    "error": "Error"
+  },
+  "dashboard": {
+    "title": "Market Overview",
+    "symbol": "Symbol",
+    "price": "Price",
+    "change": "24h Change",
+    "search": "Search tokens...",
+    "noData": "No data available",
+    "favorites": "Favorites"
+  },
+  "tokenDetail": {
+    "title": "Token Details",
+    "chart": "Price Chart",
+    "orderBook": "Order Book",
+    "bids": "Bids",
+    "asks": "Asks",
+    "recentTrades": "Recent Trades",
+    "price": "Price",
+    "amount": "Amount",
+    "time": "Time",
+    "selectToken": "Select a token to view details"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "avatar": "Avatar",
+    "uploadAvatar": "Upload Avatar"
+  },
+  "common": {
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "retry": "Retry"
+  }
+}
