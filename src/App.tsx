@@ -54,12 +54,14 @@ const App = observer(function App() {
             onClick={() => setCurrentView("dashboard")}
             className={currentView === "dashboard" ? "active" : ""}
           >
+            <span>📊</span>
             {t("dashboard.title")}
           </button>
           <button
             onClick={() => setCurrentView("settings")}
             className={currentView === "settings" ? "active" : ""}
           >
+            <span>⚙️</span>
             {t("settings.title")}
           </button>
         </nav>
