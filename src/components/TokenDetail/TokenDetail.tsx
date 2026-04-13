@@ -55,14 +55,15 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
   useEffect(() => {
     if (!chartContainerRef.current || klines.length === 0) return;
 
+    const isDarkMode = document.documentElement.classList.contains('dark');
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { color: '#08101f' },
-        textColor: '#b8c2d5',
+        background: { color: isDarkMode ? '#08101f' : '#ffffff' },
+        textColor: isDarkMode ? '#b8c2d5' : '#111827',
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.05)' },
-        horzLines: { color: 'rgba(255,255,255,0.05)' },
+        vertLines: { color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.08)' },
+        horzLines: { color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.08)' },
       },
       width: chartContainerRef.current.clientWidth,
       height: 420,
@@ -123,7 +124,7 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
 
   if (loading) {
     return (
-      <div className="loading-panel">
+      <div className="min-h-80 grid place-items-center rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-8 text-(--text-muted)">
         <div>{t('app.loading')}</div>
       </div>
     );
@@ -136,49 +137,61 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
   const isPositive = priceChange >= 0;
 
   return (
-    <div className="token-detail-shell">
-      <section className="panel glass-panel token-summary">
-        <div className="token-header">
+    <div className="grid gap-6">
+      <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5">
           <div>
-            <span className="subtitle">{t('tokenDetail.overview')}</span>
-            <h2>{baseSymbol.toUpperCase()} / USDT</h2>
+            <span className="block text-sm uppercase tracking-[0.16em] text-(--text-muted) mb-2">
+              {t('tokenDetail.overview')}
+            </span>
+            <h2 className="text-2xl font-semibold">{baseSymbol.toUpperCase()} / USDT</h2>
           </div>
-          <div className={`token-badge ${isPositive ? 'up' : 'down'}`}>
+          <div className={`rounded-full px-4 py-2 text-sm font-semibold ${
+            isPositive
+              ? 'bg-[rgba(82,227,255,0.14)] text-(--success)'
+              : 'bg-[rgba(255,111,111,0.12)] text-(--danger)'
+          }`}>
             {isPositive ? '+' : ''}{formattedChange}%
           </div>
         </div>
 
-        <div className="token-price">
+        <div className="flex flex-wrap items-baseline gap-3 text-(--text-muted)">
           <span>{t('tokenDetail.currentPrice')}</span>
-          <strong>${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          <strong className="text-4xl font-semibold text-(--text-strong)">
+            ${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </strong>
         </div>
       </section>
 
-      <section className="panel glass-panel token-chart-panel">
-        <div ref={chartContainerRef} className="chart-canvas" />
+      <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 min-h-110">
+        <div ref={chartContainerRef} className="h-full rounded-3xl overflow-hidden" />
       </section>
 
-      <div className="token-grid">
-        <section className="panel glass-panel token-card">
-          <h3>{t('tokenDetail.orderBook')}</h3>
-          <div className="order-grid">
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_0.9fr]">
+        <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6">
+          <h3 className="text-lg font-semibold mb-4">{t('tokenDetail.orderBook')}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <div className="order-title">{t('tokenDetail.bids')}</div>
-              <div className="order-list">
+              <div className="mb-3 text-sm uppercase tracking-[0.12em] text-(--text-muted) font-semibold">
+                {t('tokenDetail.bids')}
+              </div>
+              <div className="grid gap-2">
                 {orderBook?.bids.slice(0, 10).map(([price, qty], i) => (
-                  <div key={i} className="order-row">
-                    <span className="text-accent">{parseFloat(price).toFixed(2)}</span>
+                  <div key={i} className="flex items-center justify-between rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-2 text-sm text-(--text-muted)">
+                    <span className="text-(--success)">{parseFloat(price).toFixed(2)}</span>
                     <span>{parseFloat(qty).toFixed(4)}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div>
-              <div className="order-title">{t('tokenDetail.asks')}</div>
-              <div className="order-list">
+              <div className="mb-3 text-sm uppercase tracking-[0.12em] text-(--text-muted) font-semibold">
+                {t('tokenDetail.asks')}
+              </div>
+              <div className="grid gap-2">
                 {orderBook?.asks.slice(0, 10).map(([price, qty], i) => (
-                  <div key={i} className="order-row">
-                    <span className="text-danger">{parseFloat(price).toFixed(2)}</span>
+                  <div key={i} className="flex items-center justify-between rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-2 text-sm text-(--text-muted)">
+                    <span className="text-(--danger)">{parseFloat(price).toFixed(2)}</span>
                     <span>{parseFloat(qty).toFixed(4)}</span>
                   </div>
                 ))}
@@ -187,16 +200,16 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
           </div>
         </section>
 
-        <section className="panel glass-panel token-card">
-          <h3>{t('tokenDetail.recentTrades')}</h3>
-          <div className="trade-list">
+        <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6">
+          <h3 className="text-lg font-semibold mb-4">{t('tokenDetail.recentTrades')}</h3>
+          <div className="grid gap-3">
             {recentTrades.slice(0, 20).map((trade) => (
-              <div key={trade.id} className="trade-row">
-                <span className={trade.isBuyerMaker ? 'text-danger' : 'text-accent'}>
+              <div key={trade.id} className="flex items-center justify-between gap-4 rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-3 text-sm text-(--text-muted)">
+                <span className={trade.isBuyerMaker ? 'text-(--danger)' : 'text-(--success)'}>
                   {parseFloat(trade.price).toFixed(2)}
                 </span>
                 <span>{parseFloat(trade.qty).toFixed(4)}</span>
-                <span className="trade-time">{new Date(trade.time).toLocaleTimeString()}</span>
+                <span className="text-(--text-muted)">{new Date(trade.time).toLocaleTimeString()}</span>
               </div>
             ))}
           </div>
