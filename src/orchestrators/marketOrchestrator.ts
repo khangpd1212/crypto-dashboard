@@ -1,6 +1,6 @@
-import { binanceWS } from '../services/binanceWebSocket';
-import { fetchExchangeInfo } from '../services/binanceApi';
-import { setMarketLoadingMutator, setMarketErrorMutator } from '../mutators/marketMutators';
+import { setMarketErrorMutator, setMarketLoadingMutator } from "@/mutators/marketMutators";
+import { fetchExchangeInfo } from "@/services/binanceApi";
+import binanceWS from "@/services/binanceWebSocket";
 
 export const initializeMarketData = async (): Promise<void> => {
   setMarketLoadingMutator(true);

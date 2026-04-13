@@ -1,69 +1,33 @@
-import { getMarketStore } from '../stores';
-import { Ticker, MiniTicker } from '../types/binance';
+import { marketStore } from "@/stores/marketStore";
+import { MiniTicker, Ticker } from "@/types/binance";
 
 export const setTickersMutator = (tickers: Map<string, Ticker>) => {
-  const state = getMarketStore().get();
-  state.tickers = tickers;
+  marketStore.setTickers(tickers);
 };
 
 export const updatePriceMutator = (symbol: string, price: string, priceChangePercent: string) => {
-  const state = getMarketStore().get();
-  const existing = state.tickers.get(symbol);
-  
-  if (existing) {
-    state.tickers.set(symbol, {
-      ...existing,
-      price,
-      priceChangePercent,
-      lastUpdate: Date.now(),
-    });
-  } else {
-    state.tickers.set(symbol, {
-      symbol,
-      price,
-      priceChangePercent,
-      lastUpdate: Date.now(),
-    });
-  }
+  marketStore.updateTicker(symbol, price, priceChangePercent);
 };
 
 export const setMarketConnectedMutator = (isConnected: boolean) => {
-  const state = getMarketStore().get();
-  state.isConnected = isConnected;
+  marketStore.setConnected(isConnected);
 };
 
 export const setMarketLoadingMutator = (isLoading: boolean) => {
-  const state = getMarketStore().get();
-  state.isLoading = isLoading;
+  marketStore.setLoading(isLoading);
 };
 
 export const setMarketErrorMutator = (error: string | null) => {
-  const state = getMarketStore().get();
-  state.error = error;
+  marketStore.setError(error);
 };
 
 export const toggleFavoriteMutator = (symbol: string) => {
-  const state = getMarketStore().get();
-  const favorites = new Set(state.favorites);
-  
-  if (favorites.has(symbol)) {
-    favorites.delete(symbol);
-  } else {
-    favorites.add(symbol);
-  }
-  
-  state.favorites = favorites;
+  marketStore.toggleFavorite(symbol);
 };
 
 export const processMiniTickerMutator = (data: MiniTicker) => {
-  const state = getMarketStore().get();
   const symbol = data.s;
   const priceChange = ((parseFloat(data.c) - parseFloat(data.o)) / parseFloat(data.o) * 100).toFixed(2);
   
-  state.tickers.set(symbol, {
-    symbol,
-    price: data.c,
-    priceChangePercent: priceChange,
-    lastUpdate: data.E,
-  });
+  marketStore.updateTicker(symbol, data.c, priceChange);
 };

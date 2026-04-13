@@ -1,4 +1,4 @@
-import { ExchangeInfo, Kline, OrderBook, Trade } from '../types/binance';
+import type { ExchangeInfo, Kline, OrderBook, Trade } from '@/types/binance';
 
 const REST_BASE = 'https://api.binance.com/api/v3';
 

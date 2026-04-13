@@ -1,11 +1,9 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable } from "mobx";
+import { Language, Theme } from "@/types/common";
 
-export type Language = 'en' | 'vi';
-export type Theme = 'light' | 'dark';
-
-export class SettingsState {
-  language: Language = 'en';
-  theme: Theme = 'dark';
+class SettingsState {
+  language: Language = Language.English;
+  theme: Theme = Theme.Light;
   avatar: string | null = null;
 
   constructor() {
@@ -15,12 +13,12 @@ export class SettingsState {
 
   setLanguage(lang: Language) {
     this.language = lang;
-    localStorage.setItem('crypto-dashboard-lang', lang);
+    localStorage.setItem("crypto-dashboard-lang", lang);
   }
 
   setTheme(t: Theme) {
     this.theme = t;
-    localStorage.setItem('crypto-dashboard-theme', t);
+    localStorage.setItem("crypto-dashboard-theme", t);
   }
 
   setAvatar(data: string | null) {
@@ -28,9 +26,9 @@ export class SettingsState {
   }
 
   private loadFromStorage() {
-    const lang = localStorage.getItem('crypto-dashboard-lang') as Language;
-    const theme = localStorage.getItem('crypto-dashboard-theme') as Theme;
-    const avatar = localStorage.getItem('crypto-dashboard-avatar');
+    const lang = localStorage.getItem("crypto-dashboard-lang") as Language;
+    const theme = localStorage.getItem("crypto-dashboard-theme") as Theme;
+    const avatar = localStorage.getItem("crypto-dashboard-avatar");
 
     if (lang) this.language = lang;
     if (theme) this.theme = theme;

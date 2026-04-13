@@ -1,5 +1,5 @@
-import { MiniTicker } from '../types/binance';
-import { processMiniTickerMutator, setMarketConnectedMutator } from '../mutators/marketMutators';
+import type { MiniTicker } from '@/types/binance';
+import { processMiniTickerMutator, setMarketConnectedMutator } from '@/mutators/marketMutators';
 
 const WS_BASE = 'wss://stream.binance.com:9443/ws';
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];

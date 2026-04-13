@@ -12,55 +12,60 @@ const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps)
   const { t } = useTranslation();
   const { marketStore } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const tickers = useMemo(() => {
     const arr = Array.from(marketStore.tickers.values());
     const favorites = Array.from(marketStore.favorites);
-    
-    const filtered = arr.filter(t => 
-      t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const filtered = arr.filter((t) =>
+      t.symbol.toLowerCase().includes(searchQuery.toLowerCase()),
     );
-    
+
     const sorted = [...filtered].sort((a, b) => {
       const aFav = favorites.includes(a.symbol) ? 0 : 1;
       const bFav = favorites.includes(b.symbol) ? 0 : 1;
       return aFav - bFav;
     });
-    
+
     return sorted;
   }, [marketStore.tickers, marketStore.favorites, searchQuery]);
 
   return (
-    <div>
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder={t('dashboard.search')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full max-w-md px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      
+    <div className="dashboard-shell">
+      <section className="panel glass-panel dashboard-summary">
+        <div className="section-head">
+          <div>
+            <span className="subtitle">{t('dashboard.marketPulse') || 'Recommended coins for 24 hours'}</span>
+            <h2>{t('dashboard.marketOverview') || 'Top staking assets'}</h2>
+          </div>
+          <span className="count-pill">{tickers.length} {t('dashboard.pairs') || 'pairs'}</span>
+        </div>
+
+        <div className="search-panel">
+          <label htmlFor="search-market">{t('dashboard.search')}</label>
+          <input
+            id="search-market"
+            type="text"
+            placeholder={t('dashboard.search')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </section>
+
       {marketStore.isLoading && (
-        <div className="text-center py-8 text-gray-400">
-          {t('app.loading')}
-        </div>
+        <div className="panel glass-panel panel-info">{t('app.loading')}</div>
       )}
-      
+
       {marketStore.error && (
-        <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-          {marketStore.error}
-        </div>
+        <div className="panel glass-panel panel-error">{marketStore.error}</div>
       )}
-      
+
       {!marketStore.isLoading && tickers.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          {t('dashboard.noData')}
-        </div>
+        <div className="panel glass-panel panel-info">{t('dashboard.noData')}</div>
       )}
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+      <div className="ticker-grid">
         {tickers.map((ticker) => (
           <TickerCard
             key={ticker.symbol}

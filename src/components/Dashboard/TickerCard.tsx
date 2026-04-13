@@ -12,19 +12,19 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
   const { marketStore } = useStore();
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
   const [prevPrice, setPrevPrice] = useState(ticker.price);
-  
+
   useEffect(() => {
     const currentPrice = parseFloat(ticker.price);
     const prev = parseFloat(prevPrice);
-    
+
     if (currentPrice > prev) {
       setFlash('up');
     } else if (currentPrice < prev) {
       setFlash('down');
     }
-    
+
     setPrevPrice(ticker.price);
-    
+
     const timeout = setTimeout(() => setFlash(null), 300);
     return () => clearTimeout(timeout);
   }, [ticker.price, prevPrice]);
@@ -32,39 +32,41 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
   const changePercent = parseFloat(ticker.priceChangePercent);
   const isPositive = changePercent >= 0;
   const baseSymbol = ticker.symbol.replace('USDT', '');
+  const fillWidth = Math.min(Math.abs(changePercent) * 3.5, 100);
 
   return (
     <div
       onClick={onClick}
-      className={`
-        bg-gray-800 rounded-lg p-4 cursor-pointer transition-all hover:bg-gray-750
-        border border-gray-700 hover:border-gray-600
-        ${flash === 'up' ? 'ring-2 ring-green-500' : ''}
-        ${flash === 'down' ? 'ring-2 ring-red-500' : ''}
-      `}
+      className={`ticker-card ${flash === 'up' ? 'flash-up' : ''} ${flash === 'down' ? 'flash-down' : ''}`}
     >
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <span className="text-lg font-bold">{baseSymbol}</span>
-          <span className="text-sm text-gray-400 ml-1">/USDT</span>
+      <div className="flash-ring" />
+      <div className="card-top">
+        <div className="ticker-symbol">
+          <span>{baseSymbol}</span>
+          <small>/USDT</small>
         </div>
         <button
           onClick={(e) => {
             e.stopPropagation();
             marketStore.toggleFavorite(ticker.symbol);
           }}
-          className="text-xl hover:scale-110 transition"
+          className="star-btn"
+          aria-label={isFavorite ? 'Remove favorite' : 'Add favorite'}
         >
-          {isFavorite ? '⭐' : '☆'}
+          {isFavorite ? '★' : '☆'}
         </button>
       </div>
-      
-      <div className="text-2xl font-mono mb-1">
+
+      <div className="price">
         ${parseFloat(ticker.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
-      
-      <div className={`font-mono ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+
+      <div className={`change ${isPositive ? 'up' : 'down'}`}>
         {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+      </div>
+
+      <div className="bar-wrap" aria-hidden="true">
+        <div className="bar-fill" style={{ width: `${fillWidth}%` }} />
       </div>
     </div>
   );

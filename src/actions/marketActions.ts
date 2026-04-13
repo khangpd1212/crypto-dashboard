@@ -1,4 +1,4 @@
-import { Ticker } from '../types/binance';
+import { Ticker } from "@/types/binance";
 
 export const setTickers = (tickers: Map<string, Ticker>) => ({
   type: 'SET_TICKERS' as const,
