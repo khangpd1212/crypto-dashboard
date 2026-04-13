@@ -2,7 +2,11 @@
   "app": {
     "title": "Crypto Dashboard",
     "loading": "Đang tải...",
-    "error": "Lỗi"
+    "error": "Lỗi",
+    "brand": "StakeNet",
+    "status": "Dữ liệu thị trường trực tiếp",
+    "cockpit": "Bảng điều khiển Staking thanh khoản",
+    "back": "Quay lại"
   },
   "dashboard": {
     "title": "Tổng quan thị trường",
@@ -11,11 +15,16 @@
     "change": "Thay đổi 24h",
     "search": "Tìm token...",
     "noData": "Không có dữ liệu",
-    "favorites": "Yêu thích"
+    "favorites": "Yêu thích",
+    "marketPulse": "Các coin được đề xuất trong 24 giờ",
+    "marketOverview": "Top tài sản staking",
+    "pairs": "cặp"
   },
   "tokenDetail": {
     "title": "Chi tiết token",
     "chart": "Biểu đồ giá",
+    "overview": "Chi tiết tài sản",
+    "currentPrice": "Giá hiện tại",
     "orderBook": "Sổ lệnh",
     "bids": "Lệnh mua",
     "asks": "Lệnh bán",
@@ -32,12 +41,17 @@
     "dark": "Tối",
     "light": "Sáng",
     "avatar": "Ảnh đại diện",
-    "uploadAvatar": "Tải ảnh lên"
+    "uploadAvatar": "Tải ảnh lên",
+    "subtitle": "Tinh chỉnh bảng điều khiển, ngôn ngữ và chi tiết hồ sơ.",
+    "english": "English",
+    "vietnamese": "Tiếng Việt"
   },
   "common": {
     "close": "Đóng",
     "save": "Lưu",
     "cancel": "Hủy",
-    "retry": "Thử lại"
+    "retry": "Thử lại",
+    "addFavorite": "Thêm yêu thích",
+    "removeFavorite": "Xóa khỏi yêu thích"
   }
 }

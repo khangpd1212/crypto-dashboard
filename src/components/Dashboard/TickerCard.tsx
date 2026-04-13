@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '@/stores';
 import { Ticker } from '@/types/binance';
 
@@ -9,6 +10,7 @@ interface TickerCardProps {
 }
 
 function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
+  const { t } = useTranslation();
   const { marketStore } = useStore();
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
   const [prevPrice, setPrevPrice] = useState(ticker.price);
@@ -51,7 +53,7 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
             marketStore.toggleFavorite(ticker.symbol);
           }}
           className="star-btn"
-          aria-label={isFavorite ? 'Remove favorite' : 'Add favorite'}
+          aria-label={isFavorite ? t('common.removeFavorite') : t('common.addFavorite')}
         >
           {isFavorite ? '★' : '☆'}
         </button>

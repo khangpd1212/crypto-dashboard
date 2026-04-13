@@ -43,12 +43,12 @@ const Settings = observer(function Settings() {
               <button
                 onClick={() => handleLanguageChange(Language.English)}
                 className={`btn ${settingsStore.language === Language.English ? 'btn-accent' : ''}`}>
-                English
+                {t("settings.english")}
               </button>
               <button
                 onClick={() => handleLanguageChange(Language.Vietnamese)}
                 className={`btn ${settingsStore.language === Language.Vietnamese ? 'btn-accent' : ''}`}>
-                Tiếng Việt
+                {t("settings.vietnamese")}
               </button>
             </div>
           </div>

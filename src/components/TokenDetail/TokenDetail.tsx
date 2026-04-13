@@ -140,7 +140,7 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
       <section className="panel glass-panel token-summary">
         <div className="token-header">
           <div>
-            <span className="subtitle">{t('tokenDetail.overview') || 'Asset details'}</span>
+            <span className="subtitle">{t('tokenDetail.overview')}</span>
             <h2>{baseSymbol.toUpperCase()} / USDT</h2>
           </div>
           <div className={`token-badge ${isPositive ? 'up' : 'down'}`}>
@@ -149,7 +149,7 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
         </div>
 
         <div className="token-price">
-          <span>Current price</span>
+          <span>{t('tokenDetail.currentPrice')}</span>
           <strong>${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
         </div>
       </section>
