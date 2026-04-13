@@ -1,6 +1,7 @@
-import { useState, useMemo, observer } from 'react';
+import { useState, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
 import { useTranslation } from 'react-i18next';
-import { marketStore } from '../../stores';
+import { useStore } from '@/stores';
 import TickerCard from './TickerCard';
 
 interface DashboardProps {
@@ -9,6 +10,7 @@ interface DashboardProps {
 
 const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps) {
   const { t } = useTranslation();
+  const { marketStore } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   
   const tickers = useMemo(() => {

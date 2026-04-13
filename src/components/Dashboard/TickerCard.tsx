@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from 'react';
-import { Ticker } from '../../types/binance';
-import { marketStore } from '../../stores';
+import { useStore } from '@/stores';
+import { Ticker } from '@/types/binance';
 
 interface TickerCardProps {
   ticker: Ticker;
@@ -9,6 +9,7 @@ interface TickerCardProps {
 }
 
 function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
+  const { marketStore } = useStore();
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
   const [prevPrice, setPrevPrice] = useState(ticker.price);
   
