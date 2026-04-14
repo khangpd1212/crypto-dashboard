@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, CandlestickData, Time } from 'lightweight-charts';
 import { Kline, OrderBook, Trade } from '@/types/binance';
 import { fetchKlines, fetchOrderBook, fetchRecentTrades } from '@/services/binanceApi';
+import { tokenWS } from '@/services/binanceWebSocket';
 import OrderBookSection from './components/OrderBookSection';
 import RecentTradesSection from './components/RecentTradesSection';
 
@@ -23,11 +24,11 @@ export default function TokenDetail() {
   const [orderBook, setOrderBook] = useState<OrderBook | null>(null);
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
-  const wsRef = useRef<WebSocket | null>(null);
 
   const pendingOrderBook = useRef<OrderBook | null>(null);
   const pendingTrades = useRef<Trade[]>([]);
   const throttleTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recentTradesRef = useRef<Trade[]>([]);
 
   const baseSymbol = symbol.replace('USDT', '').toLowerCase();
   const wsSymbol = symbol.toLowerCase();
@@ -46,6 +47,7 @@ export default function TokenDetail() {
         setLivePrice(klinesData[klinesData.length - 1]?.close || 0);
         setOrderBook(orderBookData);
         setRecentTrades(tradesData.slice(0, MAX_TRADES));
+        recentTradesRef.current = tradesData.slice(0, MAX_TRADES);
       } catch (error) {
         console.error('Failed to load token data:', error);
       } finally {
@@ -56,11 +58,72 @@ export default function TokenDetail() {
     loadData();
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      // Don't disconnect - let Dashboard continue using the WebSocket
     };
   }, [symbol]);
+
+  const handleTokenMessage = useCallback((data: any, stream: string) => {
+    if (stream === `${wsSymbol}@miniTicker`) {
+      if (data.c) {
+        setLivePrice(parseFloat(data.c));
+      }
+    } else if (stream === `${wsSymbol}@kline_15m`) {
+      const k = data.k;
+      setLivePrice(parseFloat(k.c));
+      if (candleSeriesRef.current) {
+        candleSeriesRef.current.update({
+          time: (k.t / 1000) as Time,
+          open: parseFloat(k.o),
+          high: parseFloat(k.h),
+          low: parseFloat(k.l),
+          close: parseFloat(k.c),
+        });
+      }
+    } else if (stream === `${wsSymbol}@depth20@100ms`) {
+      if (data.lastUpdateId) {
+        pendingOrderBook.current = {
+          lastUpdateId: data.lastUpdateId,
+          bids: data.bids,
+          asks: data.asks,
+        };
+      }
+    } else if (stream === `${wsSymbol}@trade`) {
+      const newTrade = {
+        id: data.t,
+        price: data.p,
+        qty: data.q,
+        time: data.T,
+        isBuyerMaker: data.m,
+      };
+      pendingTrades.current = [newTrade, ...pendingTrades.current].slice(0, MAX_TRADES);
+    }
+  }, [wsSymbol]);
+
+  const scheduleUpdate = useCallback(() => {
+    if (!throttleTimeout.current) {
+      throttleTimeout.current = setTimeout(() => {
+        if (pendingOrderBook.current) {
+          setOrderBook(pendingOrderBook.current);
+        }
+        if (pendingTrades.current.length > 0) {
+          const existingTrades = recentTradesRef.current;
+          const newTrades = pendingTrades.current;
+          const combined = [...newTrades, ...existingTrades];
+          const uniqueIds = new Set<number>();
+          const deduped = combined.filter(t => {
+            if (uniqueIds.has(t.id)) return false;
+            uniqueIds.add(t.id);
+            return true;
+          });
+          setRecentTrades(deduped.slice(0, MAX_TRADES));
+          recentTradesRef.current = deduped.slice(0, MAX_TRADES);
+          pendingTrades.current = [];
+        }
+        pendingOrderBook.current = null;
+        throttleTimeout.current = null;
+      }, 1000);
+    }
+  }, []);
 
   useEffect(() => {
     if (!chartContainerRef.current || klines.length === 0) return;
@@ -102,85 +165,44 @@ export default function TokenDetail() {
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
 
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${wsSymbol}@miniTicker/${wsSymbol}@kline_15m/${wsSymbol}@depth20@100ms/${wsSymbol}@trade`);
-    
-    ws.onopen = () => {
-      console.log('✅ WebSocket connected:', wsSymbol);
-    };
-    
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
-    };
-
-    const scheduleUpdate = () => {
-      if (!throttleTimeout.current) {
-        throttleTimeout.current = setTimeout(() => {
-          if (pendingOrderBook.current) {
-            setOrderBook(pendingOrderBook.current);
-          }
-          if (pendingTrades.current.length > 0) {
-            const existingTrades = recentTrades;
-            const newTrades = pendingTrades.current;
-            const combined = [...newTrades, ...existingTrades];
-            const uniqueIds = new Set<number>();
-            const deduped = combined.filter(t => {
-              if (uniqueIds.has(t.id)) return false;
-              uniqueIds.add(t.id);
-              return true;
-            });
-            setRecentTrades(deduped.slice(0, MAX_TRADES));
-            pendingTrades.current = [];
-          }
-          pendingOrderBook.current = null;
-          throttleTimeout.current = null;
-        }, 1000);
-      }
-    };
-    
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        const stream = message.stream;
-        const data = message.data;
-
-        if (stream === `${wsSymbol}@miniTicker`) {
-          if (data.c) {
-            setLivePrice(parseFloat(data.c));
-          }
-        } else if (stream === `${wsSymbol}@kline_15m`) {
-          const k = data.k;
-          setLivePrice(parseFloat(k.c));
-          candleSeries.update({
+    const handleTokenMsg = (data: any, stream: string) => {
+      if (stream === `${wsSymbol}@miniTicker`) {
+        if (data.c) {
+          setLivePrice(parseFloat(data.c));
+        }
+      } else if (stream === `${wsSymbol}@kline_15m`) {
+        const k = data.k;
+        setLivePrice(parseFloat(k.c));
+        if (candleSeriesRef.current) {
+          candleSeriesRef.current.update({
             time: (k.t / 1000) as Time,
             open: parseFloat(k.o),
             high: parseFloat(k.h),
             low: parseFloat(k.l),
             close: parseFloat(k.c),
           });
-        } else if (stream === `${wsSymbol}@depth20@100ms`) {
+        }
+      } else if (stream === `${wsSymbol}@depth20@100ms`) {
+        if (data.lastUpdateId) {
           pendingOrderBook.current = {
             lastUpdateId: data.lastUpdateId,
             bids: data.bids,
             asks: data.asks,
           };
-          scheduleUpdate();
-        } else if (stream === `${wsSymbol}@trade`) {
-          const newTrade = {
-            id: data.t,
-            price: data.p,
-            qty: data.q,
-            time: data.T,
-            isBuyerMaker: data.m,
-          };
-          pendingTrades.current = [newTrade, ...pendingTrades.current].slice(0, MAX_TRADES);
-          scheduleUpdate();
         }
-      } catch (e) {
-        console.error('WebSocket parse error:', e);
+      } else if (stream === `${wsSymbol}@trade`) {
+        const newTrade = {
+          id: data.t,
+          price: data.p,
+          qty: data.q,
+          time: data.T,
+          isBuyerMaker: data.m,
+        };
+        pendingTrades.current = [newTrade, ...pendingTrades.current].slice(0, MAX_TRADES);
       }
     };
-    
-    wsRef.current = ws;
+
+    tokenWS.connectToToken(wsSymbol, handleTokenMsg);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -188,17 +210,21 @@ export default function TokenDetail() {
       }
     };
 
+    const updateInterval = setInterval(() => {
+      if (pendingOrderBook.current || pendingTrades.current.length > 0) {
+        scheduleUpdate();
+      }
+    }, 1000);
+
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (throttleTimeout.current) {
-        clearTimeout(throttleTimeout.current);
-      }
-      ws.close();
+      clearInterval(updateInterval);
+      tokenWS.disconnect();
       chart.remove();
     };
-  }, [klines.length, wsSymbol]);
+  }, [klines.length, wsSymbol, handleTokenMessage, scheduleUpdate]);
 
   if (loading) {
     return (

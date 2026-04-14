@@ -6,6 +6,7 @@ export interface MarketState {
   favorites: Set<string>;
   isConnected: boolean;
   isLoading: boolean;
+  hasReceivedData: boolean;
   error: string | null;
 }
 
@@ -14,6 +15,7 @@ class MarketStore {
   favorites = new Set<string>();
   isConnected = false;
   isLoading = false;
+  hasReceivedData = false;
   error: string | null = null;
 
   constructor() {
@@ -57,6 +59,10 @@ class MarketStore {
     this.isLoading = loading;
   }
 
+  setHasReceivedData(hasData: boolean) {
+    this.hasReceivedData = hasData;
+  }
+
   setError(error: string | null) {
     this.error = error;
   }
@@ -69,5 +75,6 @@ export const initialMarketState: MarketState = {
   favorites: new Set(),
   isConnected: false,
   isLoading: false,
+  hasReceivedData: false,
   error: null,
 };

@@ -9,6 +9,8 @@ const Dashboard = observer(function Dashboard() {
   const { marketStore } = useStore();
   const [searchQuery, setSearchQuery] = useState("");
 
+  // WebSocket is initialized in App.tsx via initializeMarketData()
+
   const tickers = useMemo(() => {
     const arr = Array.from(marketStore.tickers.values());
     const favorites = Array.from(marketStore.favorites);
@@ -72,7 +74,13 @@ const Dashboard = observer(function Dashboard() {
         </div>
       )}
 
-      {!marketStore.isLoading && tickers.length === 0 && (
+      {!marketStore.isLoading && !marketStore.hasReceivedData && (
+        <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
+          {t("dashboard.connecting")}
+        </div>
+      )}
+
+      {!marketStore.isLoading && marketStore.hasReceivedData && tickers.length === 0 && (
         <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
           {t("dashboard.noData")}
         </div>

@@ -15,6 +15,7 @@
     "change": "24h Change",
     "search": "Search tokens...",
     "noData": "No data available",
+    "connecting": "Connecting to market feed...",
     "favorites": "Favorites",
     "marketPulse": "Recommended coins for 24 hours",
     "marketOverview": "Top staking assets",

@@ -17,6 +17,10 @@ export const setMarketLoadingMutator = (isLoading: boolean) => {
   marketStore.setLoading(isLoading);
 };
 
+export const setHasReceivedDataMutator = (hasData: boolean) => {
+  marketStore.setHasReceivedData(hasData);
+};
+
 export const setMarketErrorMutator = (error: string | null) => {
   marketStore.setError(error);
 };

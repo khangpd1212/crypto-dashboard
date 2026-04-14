@@ -1,19 +1,15 @@
-import { setMarketErrorMutator, setMarketLoadingMutator } from "@/mutators/marketMutators";
+import { setMarketErrorMutator, setMarketLoadingMutator, setHasReceivedDataMutator } from "@/mutators/marketMutators";
 import { fetchExchangeInfo } from "@/services/binanceApi";
-import binanceWS from "@/services/binanceWebSocket";
+import { marketWS } from "@/services/binanceWebSocket";
 
 export const initializeMarketData = async (): Promise<void> => {
+  setHasReceivedDataMutator(false);
   setMarketLoadingMutator(true);
   setMarketErrorMutator(null);
   
   try {
-    const exchangeInfo = await fetchExchangeInfo();
-    const usdtSymbols = exchangeInfo.symbols
-      .filter(s => s.quoteAsset === 'USDT')
-      .slice(0, 50)
-      .map(s => s.symbol);
-    
-    binanceWS.connect(usdtSymbols);
+    await fetchExchangeInfo();
+    marketWS.connect();
   } catch (error) {
     setMarketErrorMutator(error instanceof Error ? error.message : 'Failed to fetch exchange info');
   } finally {
@@ -22,9 +18,9 @@ export const initializeMarketData = async (): Promise<void> => {
 };
 
 export const disconnectMarketData = (): void => {
-  binanceWS.disconnect();
+  marketWS.disconnect();
 };
 
 export const reconnectMarketData = (): void => {
-  binanceWS.reconnect();
+  marketWS.reconnect();
 };
