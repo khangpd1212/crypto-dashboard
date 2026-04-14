@@ -1,17 +1,13 @@
-import { useMemo, useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import { useTranslation } from 'react-i18next';
-import { useStore } from '@/stores';
-import TickerCard from './TickerCard';
+import { useMemo, useState } from "react";
+import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
+import { useStore } from "@/stores";
+import TickerCard from "./TickerCard";
 
-interface DashboardProps {
-  onSelectToken: (symbol: string) => void;
-}
-
-const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps) {
+const Dashboard = observer(function Dashboard() {
   const { t } = useTranslation();
   const { marketStore } = useStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const tickers = useMemo(() => {
     const arr = Array.from(marketStore.tickers.values());
@@ -36,33 +32,37 @@ const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps)
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <span className="block text-sm uppercase tracking-[0.16em] text-(--text-muted) mb-2">
-              {t('dashboard.marketPulse') || 'Recommended coins for 24 hours'}
+              {t("dashboard.marketPulse") || "Recommended coins for 24 hours"}
             </span>
-            <h2 className="text-3xl font-semibold">{t('dashboard.marketOverview') || 'Top staking assets'}</h2>
+            <h2 className="text-3xl font-semibold">
+              {t("dashboard.marketOverview") || "Top staking assets"}
+            </h2>
           </div>
-          <span className="inline-flex rounded-full bg-[var(--accent-soft)] px-3 py-2 text-sm font-medium text-(--text) dark:text-white/90">
-            {tickers.length} {t('dashboard.pairs') || 'pairs'}
+          <span className="inline-flex rounded-full bg-(--accent-soft) px-3 py-2 text-sm font-medium text-(--text) dark:text-white/90">
+            {tickers.length} {t("dashboard.pairs") || "pairs"}
           </span>
         </div>
 
         <div className="grid gap-3">
-          <label htmlFor="search-market" className="text-sm font-medium text-(--text-muted)">
-            {t('dashboard.search')}
+          <label
+            htmlFor="search-market"
+            className="text-sm font-medium text-(--text-muted)">
+            {t("dashboard.search")}
           </label>
           <input
             id="search-market"
             type="text"
-            placeholder={t('dashboard.search')}
+            placeholder={t("dashboard.search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-2xl border border-(--border) bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-4 py-3 text-(--text) placeholder:text-(--text-muted) outline-none transition focus:border-[var(--accent-border)]"
+            className="w-full rounded-2xl border border-(--border) bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-4 py-3 text-(--text) placeholder:text-(--text-muted) outline-none transition focus:border-(--accent-border)"
           />
         </div>
       </section>
 
       {marketStore.isLoading && (
         <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
-          {t('app.loading')}
+          {t("app.loading")}
         </div>
       )}
 
@@ -74,7 +74,7 @@ const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps)
 
       {!marketStore.isLoading && tickers.length === 0 && (
         <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
-          {t('dashboard.noData')}
+          {t("dashboard.noData")}
         </div>
       )}
 
@@ -84,7 +84,6 @@ const Dashboard = observer(function Dashboard({ onSelectToken }: DashboardProps)
             key={ticker.symbol}
             ticker={ticker}
             isFavorite={marketStore.favorites.has(ticker.symbol)}
-            onClick={() => onSelectToken(ticker.symbol)}
           />
         ))}
       </div>

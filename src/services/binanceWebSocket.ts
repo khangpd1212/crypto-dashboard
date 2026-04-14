@@ -90,7 +90,7 @@ class BinanceWebSocket {
   private startHeartbeat(): void {
     this.heartbeatInterval = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ method: 'ping' }));
+        this.ws.send('ping');
       }
     }, 30000);
   }

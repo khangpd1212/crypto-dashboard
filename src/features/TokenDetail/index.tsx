@@ -1,27 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, CandlestickData, Time } from 'lightweight-charts';
 import { Kline, OrderBook, Trade } from '@/types/binance';
 import { fetchKlines, fetchOrderBook, fetchRecentTrades } from '@/services/binanceApi';
+import OrderBookSection from './components/OrderBookSection';
+import RecentTradesSection from './components/RecentTradesSection';
 
-interface TokenDetailProps {
-  symbol: string;
-  onBack: () => void;
-}
+const MAX_TRADES = 50;
 
-export default function TokenDetail({ symbol }: TokenDetailProps) {
+export default function TokenDetail() {
+  const { symbol: symbolParam } = useParams<{ symbol: string }>();
   const { t } = useTranslation();
+  const symbol = symbolParam || '';
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  
   const [klines, setKlines] = useState<Kline[]>([]);
+  const [livePrice, setLivePrice] = useState<number>(0);
   const [orderBook, setOrderBook] = useState<OrderBook | null>(null);
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
 
+  const pendingOrderBook = useRef<OrderBook | null>(null);
+  const pendingTrades = useRef<Trade[]>([]);
+  const throttleTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const baseSymbol = symbol.replace('USDT', '').toLowerCase();
+  const wsSymbol = symbol.toLowerCase();
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,8 +43,9 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
         ]);
 
         setKlines(klinesData);
+        setLivePrice(klinesData[klinesData.length - 1]?.close || 0);
         setOrderBook(orderBookData);
-        setRecentTrades(tradesData);
+        setRecentTrades(tradesData.slice(0, MAX_TRADES));
       } catch (error) {
         console.error('Failed to load token data:', error);
       } finally {
@@ -92,19 +102,84 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
 
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${baseSymbol}@kline_15m`);
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const k = data.k;
-
-      candleSeries.update({
-        time: (k.t / 1000) as Time,
-        open: parseFloat(k.o),
-        high: parseFloat(k.h),
-        low: parseFloat(k.l),
-        close: parseFloat(k.c),
-      });
+    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${wsSymbol}@miniTicker/${wsSymbol}@kline_15m/${wsSymbol}@depth20@100ms/${wsSymbol}@trade`);
+    
+    ws.onopen = () => {
+      console.log('✅ WebSocket connected:', wsSymbol);
     };
+    
+    ws.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+    };
+
+    const scheduleUpdate = () => {
+      if (!throttleTimeout.current) {
+        throttleTimeout.current = setTimeout(() => {
+          if (pendingOrderBook.current) {
+            setOrderBook(pendingOrderBook.current);
+          }
+          if (pendingTrades.current.length > 0) {
+            const existingTrades = recentTrades;
+            const newTrades = pendingTrades.current;
+            const combined = [...newTrades, ...existingTrades];
+            const uniqueIds = new Set<number>();
+            const deduped = combined.filter(t => {
+              if (uniqueIds.has(t.id)) return false;
+              uniqueIds.add(t.id);
+              return true;
+            });
+            setRecentTrades(deduped.slice(0, MAX_TRADES));
+            pendingTrades.current = [];
+          }
+          pendingOrderBook.current = null;
+          throttleTimeout.current = null;
+        }, 1000);
+      }
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        const stream = message.stream;
+        const data = message.data;
+
+        if (stream === `${wsSymbol}@miniTicker`) {
+          if (data.c) {
+            setLivePrice(parseFloat(data.c));
+          }
+        } else if (stream === `${wsSymbol}@kline_15m`) {
+          const k = data.k;
+          setLivePrice(parseFloat(k.c));
+          candleSeries.update({
+            time: (k.t / 1000) as Time,
+            open: parseFloat(k.o),
+            high: parseFloat(k.h),
+            low: parseFloat(k.l),
+            close: parseFloat(k.c),
+          });
+        } else if (stream === `${wsSymbol}@depth20@100ms`) {
+          pendingOrderBook.current = {
+            lastUpdateId: data.lastUpdateId,
+            bids: data.bids,
+            asks: data.asks,
+          };
+          scheduleUpdate();
+        } else if (stream === `${wsSymbol}@trade`) {
+          const newTrade = {
+            id: data.t,
+            price: data.p,
+            qty: data.q,
+            time: data.T,
+            isBuyerMaker: data.m,
+          };
+          pendingTrades.current = [newTrade, ...pendingTrades.current].slice(0, MAX_TRADES);
+          scheduleUpdate();
+        }
+      } catch (e) {
+        console.error('WebSocket parse error:', e);
+      }
+    };
+    
     wsRef.current = ws;
 
     const handleResize = () => {
@@ -117,10 +192,13 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (throttleTimeout.current) {
+        clearTimeout(throttleTimeout.current);
+      }
       ws.close();
       chart.remove();
     };
-  }, [klines.length, baseSymbol]);
+  }, [klines.length, wsSymbol]);
 
   if (loading) {
     return (
@@ -130,9 +208,8 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
     );
   }
 
-  const lastPrice = klines[klines.length - 1]?.close || 0;
-  const prevPrice = klines[klines.length - 2]?.close || lastPrice;
-  const priceChange = ((lastPrice - prevPrice) / prevPrice) * 100;
+  const prevPrice = klines[klines.length - 2]?.close || livePrice;
+  const priceChange = ((livePrice - prevPrice) / prevPrice) * 100;
   const formattedChange = priceChange.toFixed(2);
   const isPositive = priceChange >= 0;
 
@@ -158,7 +235,7 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
         <div className="flex flex-wrap items-baseline gap-3 text-(--text-muted)">
           <span>{t('tokenDetail.currentPrice')}</span>
           <strong className="text-4xl font-semibold text-(--text-strong)">
-            ${lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </strong>
         </div>
       </section>
@@ -168,52 +245,8 @@ export default function TokenDetail({ symbol }: TokenDetailProps) {
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_0.9fr]">
-        <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6">
-          <h3 className="text-lg font-semibold mb-4">{t('tokenDetail.orderBook')}</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <div className="mb-3 text-sm uppercase tracking-[0.12em] text-(--text-muted) font-semibold">
-                {t('tokenDetail.bids')}
-              </div>
-              <div className="grid gap-2">
-                {orderBook?.bids.slice(0, 10).map(([price, qty], i) => (
-                  <div key={i} className="flex items-center justify-between rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-2 text-sm text-(--text-muted)">
-                    <span className="text-(--success)">{parseFloat(price).toFixed(2)}</span>
-                    <span>{parseFloat(qty).toFixed(4)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-3 text-sm uppercase tracking-[0.12em] text-(--text-muted) font-semibold">
-                {t('tokenDetail.asks')}
-              </div>
-              <div className="grid gap-2">
-                {orderBook?.asks.slice(0, 10).map(([price, qty], i) => (
-                  <div key={i} className="flex items-center justify-between rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-2 text-sm text-(--text-muted)">
-                    <span className="text-(--danger)">{parseFloat(price).toFixed(2)}</span>
-                    <span>{parseFloat(qty).toFixed(4)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6">
-          <h3 className="text-lg font-semibold mb-4">{t('tokenDetail.recentTrades')}</h3>
-          <div className="grid gap-3">
-            {recentTrades.slice(0, 20).map((trade) => (
-              <div key={trade.id} className="flex items-center justify-between gap-4 rounded-2xl bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-3 py-3 text-sm text-(--text-muted)">
-                <span className={trade.isBuyerMaker ? 'text-(--danger)' : 'text-(--success)'}>
-                  {parseFloat(trade.price).toFixed(2)}
-                </span>
-                <span>{parseFloat(trade.qty).toFixed(4)}</span>
-                <span className="text-(--text-muted)">{new Date(trade.time).toLocaleTimeString()}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        <OrderBookSection orderBook={orderBook} />
+        <RecentTradesSection trades={recentTrades} maxRows={MAX_TRADES} />
       </div>
     </div>
   );

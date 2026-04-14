@@ -1,4 +1,5 @@
 import { useEffect, useState, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '@/stores';
 import { Ticker } from '@/types/binance';
@@ -6,12 +7,12 @@ import { Ticker } from '@/types/binance';
 interface TickerCardProps {
   ticker: Ticker;
   isFavorite: boolean;
-  onClick: () => void;
 }
 
-function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
+function TickerCard({ ticker, isFavorite }: TickerCardProps) {
   const { t } = useTranslation();
   const { marketStore } = useStore();
+  const navigate = useNavigate();
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
   const [prevPrice, setPrevPrice] = useState(ticker.price);
 
@@ -31,6 +32,15 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
     return () => clearTimeout(timeout);
   }, [ticker.price, prevPrice]);
 
+  const handleClick = () => {
+    navigate(`/token/${ticker.symbol}`);
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    marketStore.toggleFavorite(ticker.symbol);
+  };
+
   const changePercent = parseFloat(ticker.priceChangePercent);
   const isPositive = changePercent >= 0;
   const baseSymbol = ticker.symbol.replace('USDT', '');
@@ -38,7 +48,7 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className={`relative cursor-pointer overflow-hidden rounded-[26px] border border-(--border) bg-(--surface) p-6 text-(--text) shadow-[0_24px_70px_rgba(0,0,0,0.24)] transition duration-300 hover:-translate-y-1 ${
         flash === 'up'
           ? 'ring-2 ring-cyan-400/40'
@@ -53,10 +63,7 @@ function TickerCard({ ticker, isFavorite, onClick }: TickerCardProps) {
           <small className="text-sm text-(--text-muted)">/USDT</small>
         </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            marketStore.toggleFavorite(ticker.symbol);
-          }}
+          onClick={handleFavorite}
           className="rounded-2xl border border-(--border) bg-[rgba(15,23,42,0.05)] dark:bg-white/5 px-3 py-2 text-sm transition hover:bg-white/10"
           aria-label={isFavorite ? t('common.removeFavorite') : t('common.addFavorite')}
         >
