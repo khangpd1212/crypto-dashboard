@@ -19,7 +19,15 @@
     "favorites": "Favorites",
     "marketPulse": "Recommended coins for 24 hours",
     "marketOverview": "Top staking assets",
-    "pairs": "pairs"
+    "pairs": "pairs",
+    "table": {
+      "pair": "Pair",
+      "lastPrice": "Last Price",
+      "change": "24h Change"
+    }
+  },
+  "pagination": {
+    "showing": "Showing {{start}} to {{end}} of {{total}} entries"
   },
   "tokenDetail": {
     "title": "Token Details",

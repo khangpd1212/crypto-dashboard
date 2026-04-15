@@ -1,6 +1,20 @@
-import type { ExchangeInfo, Kline, OrderBook, Trade } from '@/types/binance';
+import type { ExchangeInfo, Kline, OrderBook, Trade, Ticker } from '@/types/binance';
 
 const REST_BASE = 'https://api.binance.com/api/v3';
+
+export const fetchTickers24hr = async (): Promise<Ticker[]> => {
+  const response = await fetch(`${REST_BASE}/ticker/24hr`);
+  const data = await response.json();
+  
+  return data
+    .filter((t: any) => t.symbol.endsWith('USDT'))
+    .map((t: any) => ({
+      symbol: t.symbol,
+      price: t.lastPrice,
+      priceChangePercent: t.priceChangePercent,
+      lastUpdate: Date.now(),
+    }));
+};
 
 export const fetchExchangeInfo = async (): Promise<ExchangeInfo> => {
   const response = await fetch(`${REST_BASE}/exchangeInfo`);

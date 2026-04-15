@@ -1,7 +1,9 @@
-import type { MiniTicker } from '@/types/binance';
-import { processMiniTickerMutator, setMarketConnectedMutator, setHasReceivedDataMutator } from '@/mutators/marketMutators';
+import type { MiniTicker } from "@/types/binance";
+import {
+  processMiniTickerMutator,
+} from "@/mutators/marketMutators";
 
-const WS_BASE = 'wss://stream.binance.com:9443/stream';
+const WS_BASE = "wss://stream.binance.com:9443/stream";
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
 const MAX_RETRIES = 10;
 const THROTTLE_MS = 100;
@@ -31,21 +33,18 @@ class BaseWebSocket {
       this.ws = null;
     }
 
-    console.log('[WS] Creating connection...');
     this.ws = new WebSocket(WS_BASE);
 
     this.ws.onopen = () => {
-      console.log('[WS] Connection opened');
       this.reconnectAttempts = 0;
-      this.onConnected();
 
-      const streams = this.pendingStreams.length > 0
-        ? this.pendingStreams
-        : this.activeStreams.length > 0
-          ? this.activeStreams
-          : [...this.messageHandlers.keys()];
+      const streams =
+        this.pendingStreams.length > 0
+          ? this.pendingStreams
+          : this.activeStreams.length > 0
+            ? this.activeStreams
+            : [...this.messageHandlers.keys()];
 
-      console.log('[WS] Subscribing to:', streams);
       if (streams.length > 0) {
         this.activeStreams = streams;
         this.sendSubscribe(streams);
@@ -59,14 +58,12 @@ class BaseWebSocket {
       try {
         this.handleMessage(JSON.parse(event.data));
       } catch (e) {
-        console.error('WebSocket parse error:', e);
+        console.error("WebSocket parse error:", e);
       }
     };
 
     this.ws.onclose = () => {
-      console.log('[WS] Connection closed');
       this.ws = null;
-      this.onDisconnected();
       this.stopHeartbeat();
 
       if (!this.isIntentionallyClosed && this.reconnectAttempts < MAX_RETRIES) {
@@ -75,37 +72,33 @@ class BaseWebSocket {
     };
 
     this.ws.onerror = (e) => {
-      console.error('[WS] Error:', e);
+      console.error("[WS] Error:", e);
     };
-  }
-
-  protected onConnected(): void {
-    setMarketConnectedMutator(true);
-  }
-
-  protected onDisconnected(): void {
-    setMarketConnectedMutator(false);
   }
 
   protected sendSubscribe(streams: string[]): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    this.ws.send(JSON.stringify({
-      method: 'SUBSCRIBE',
-      params: streams,
-      id: Date.now()
-    }));
+    this.ws.send(
+      JSON.stringify({
+        method: "SUBSCRIBE",
+        params: streams,
+        id: Date.now(),
+      }),
+    );
   }
 
-  protected sendUnsubscribe(streams: string[]): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+  // protected sendUnsubscribe(streams: string[]): void {
+  //   if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    this.ws.send(JSON.stringify({
-      method: 'UNSUBSCRIBE',
-      params: streams,
-      id: Date.now()
-    }));
-  }
+  //   this.ws.send(
+  //     JSON.stringify({
+  //       method: "UNSUBSCRIBE",
+  //       params: streams,
+  //       id: Date.now(),
+  //     }),
+  //   );
+  // }
 
   protected handleMessage(data: any): void {
     if (data.result !== undefined || data.id !== undefined) return;
@@ -118,24 +111,19 @@ class BaseWebSocket {
       return;
     }
 
-    const tickerData = data.stream ? data.data : data;
-    const hasData = Array.isArray(tickerData) ? tickerData.length > 0 : !!tickerData?.s;
+    const tickers = data.stream ? data.data : data;
+    const hasData = Array.isArray(tickers) ? tickers.length > 0 : !!tickers?.s;
 
     if (hasData) {
-      setHasReceivedDataMutator(true);
-      if (Array.isArray(tickerData)) {
-        tickerData.forEach((t: MiniTicker) => this.queueUpdate(t));
-      } else {
-        this.queueUpdate(tickerData);
-      }
+      this.queueUpdate(tickers);
     }
   }
 
-  protected queueUpdate(ticker: MiniTicker): void {
-    this.throttleBuffer.push(ticker);
+  protected queueUpdate(tickers: MiniTicker[]): void {
+    this.throttleBuffer = tickers;
     if (!this.throttleTimeout) {
       this.throttleTimeout = setTimeout(() => {
-        this.throttleBuffer.forEach(processMiniTickerMutator);
+        processMiniTickerMutator(this.throttleBuffer);
         this.throttleBuffer = [];
         this.throttleTimeout = null;
       }, THROTTLE_MS);
@@ -146,10 +134,11 @@ class BaseWebSocket {
     if (this.reconnectAttempts >= MAX_RETRIES) return;
     if (this.reconnectTimeout) return;
 
-    const delay = RECONNECT_DELAYS[Math.min(this.reconnectAttempts, RECONNECT_DELAYS.length - 1)];
+    const delay =
+      RECONNECT_DELAYS[
+        Math.min(this.reconnectAttempts, RECONNECT_DELAYS.length - 1)
+      ];
     this.reconnectAttempts++;
-
-    console.log('[WS] Scheduling reconnect in', delay, 'ms, attempt', this.reconnectAttempts);
 
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -162,7 +151,7 @@ class BaseWebSocket {
   protected startHeartbeat(): void {
     this.heartbeatInterval = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send('ping');
+        this.ws.send("ping");
       }
     }, 30000);
   }
@@ -176,11 +165,11 @@ class BaseWebSocket {
 
   connect(): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      console.log('[WS] Already connected, skipping...');
+      console.log("[WS] Already connected, skipping...");
       return;
     }
     if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
-      console.log('[WS] Already connecting, skipping...');
+      console.log("[WS] Already connecting, skipping...");
       return;
     }
 
@@ -201,36 +190,42 @@ class BaseWebSocket {
     }
   }
 
-  reconnect(): void {
-    this.isIntentionallyClosed = false;
-    this.reconnectAttempts = 0;
-    this.createConnection();
-  }
+  // reconnect(): void {
+  //   this.isIntentionallyClosed = false;
+  //   this.reconnectAttempts = 0;
+  //   this.createConnection();
+  // }
 
-  addSubscriptions(streams: string[], handler: MessageHandler): void {
-    streams.forEach(stream => this.messageHandlers.set(stream, handler));
+  // addSubscriptions(streams: string[], handler: MessageHandler): void {
+  //   streams.forEach((stream) => this.messageHandlers.set(stream, handler));
 
-    const state = this.ws?.readyState;
+  //   const state = this.ws?.readyState;
 
-    if (state === WebSocket.OPEN) {
-      this.sendSubscribe(streams);
-    } else if (state === WebSocket.CONNECTING || state === undefined) {
-      if (!this.pendingStreams.includes(streams[0])) {
-        this.pendingStreams = [...this.pendingStreams, ...streams];
-      }
-    } else if (!this.ws || state === WebSocket.CLOSED || state === WebSocket.CLOSING) {
-      this.createConnection();
-    }
-  }
+  //   if (state === WebSocket.OPEN) {
+  //     this.sendSubscribe(streams);
+  //   } else if (state === WebSocket.CONNECTING || state === undefined) {
+  //     if (!this.pendingStreams.includes(streams[0])) {
+  //       this.pendingStreams = [...this.pendingStreams, ...streams];
+  //     }
+  //   } else if (
+  //     !this.ws ||
+  //     state === WebSocket.CLOSED ||
+  //     state === WebSocket.CLOSING
+  //   ) {
+  //     this.createConnection();
+  //   }
+  // }
 
-  removeSubscriptions(streams: string[]): void {
-    streams.forEach(stream => this.messageHandlers.delete(stream));
-    this.pendingStreams = this.pendingStreams.filter(s => !streams.includes(s));
+  // removeSubscriptions(streams: string[]): void {
+  //   streams.forEach((stream) => this.messageHandlers.delete(stream));
+  //   this.pendingStreams = this.pendingStreams.filter(
+  //     (s) => !streams.includes(s),
+  //   );
 
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.sendUnsubscribe(streams);
-    }
-  }
+  //   if (this.ws?.readyState === WebSocket.OPEN) {
+  //     this.sendUnsubscribe(streams);
+  //   }
+  // }
 }
 
 class MarketWebSocket extends BaseWebSocket {
@@ -244,14 +239,17 @@ class MarketWebSocket extends BaseWebSocket {
   }
 
   connect(): void {
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      console.log('[MarketWS] Already connected/connecting');
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
     this.isIntentionallyClosed = false;
     this.reconnectAttempts = 0;
-    this.pendingStreams = ['!miniTicker@arr@3000ms'];
+    this.pendingStreams = ["!miniTicker@arr@3000ms"];
     this.activeStreams = [];
     this.createConnection();
   }
@@ -259,7 +257,7 @@ class MarketWebSocket extends BaseWebSocket {
 
 class TokenWebSocket extends BaseWebSocket {
   private static instance: TokenWebSocket | null = null;
-  private currentSymbol: string = '';
+  private currentSymbol: string = "";
 
   static getInstance(): TokenWebSocket {
     if (!TokenWebSocket.instance) {
@@ -269,8 +267,12 @@ class TokenWebSocket extends BaseWebSocket {
   }
 
   connectToToken(symbol: string, handler: MessageHandler): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.currentSymbol === symbol) {
-      console.log('[TokenWS] Already connected to', symbol);
+    if (
+      this.ws &&
+      this.ws.readyState === WebSocket.OPEN &&
+      this.currentSymbol === symbol
+    ) {
+      console.log("[TokenWS] Already connected to", symbol);
       return;
     }
 
@@ -291,7 +293,7 @@ class TokenWebSocket extends BaseWebSocket {
 
     this.currentSymbol = symbol;
     this.messageHandlers.clear();
-    streams.forEach(stream => this.messageHandlers.set(stream, handler));
+    streams.forEach((stream) => this.messageHandlers.set(stream, handler));
     this.pendingStreams = streams;
     this.activeStreams = [];
     this.createConnection();

@@ -4,18 +4,14 @@ import type { Ticker } from '@/types/binance';
 export interface MarketState {
   tickers: Map<string, Ticker>;
   favorites: Set<string>;
-  isConnected: boolean;
   isLoading: boolean;
-  hasReceivedData: boolean;
   error: string | null;
 }
 
 class MarketStore {
   tickers = new Map<string, Ticker>();
   favorites = new Set<string>();
-  isConnected = false;
   isLoading = false;
-  hasReceivedData = false;
   error: string | null = null;
 
   constructor() {
@@ -26,17 +22,20 @@ class MarketStore {
     }
   }
 
-  setTickers(tickers: Map<string, Ticker>) {
-    this.tickers = tickers;
+  setTickers(tickerMap: Map<string, Ticker>) {
+    this.tickers = tickerMap;
   }
 
   updateTicker(symbol: string, price: string, priceChangePercent: string) {
-    this.tickers.set(symbol, {
-      symbol,
-      price,
-      priceChangePercent,
-      lastUpdate: Date.now(),
-    });
+    const existing = this.tickers.get(symbol);
+    if (existing) {
+      this.tickers.set(symbol, {
+        ...existing,
+        price,
+        priceChangePercent,
+        lastUpdate: Date.now(),
+      });
+    }
   }
 
   toggleFavorite(symbol: string) {
@@ -51,16 +50,8 @@ class MarketStore {
     );
   }
 
-  setConnected(connected: boolean) {
-    this.isConnected = connected;
-  }
-
   setLoading(loading: boolean) {
     this.isLoading = loading;
-  }
-
-  setHasReceivedData(hasData: boolean) {
-    this.hasReceivedData = hasData;
   }
 
   setError(error: string | null) {
@@ -73,8 +64,6 @@ export const marketStore = new MarketStore();
 export const initialMarketState: MarketState = {
   tickers: new Map(),
   favorites: new Set(),
-  isConnected: false,
   isLoading: false,
-  hasReceivedData: false,
   error: null,
 };

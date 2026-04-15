@@ -1,37 +1,34 @@
 import { marketStore } from "@/stores/marketStore";
-import { MiniTicker, Ticker } from "@/types/binance";
-
-export const setTickersMutator = (tickers: Map<string, Ticker>) => {
-  marketStore.setTickers(tickers);
-};
-
-export const updatePriceMutator = (symbol: string, price: string, priceChangePercent: string) => {
-  marketStore.updateTicker(symbol, price, priceChangePercent);
-};
-
-export const setMarketConnectedMutator = (isConnected: boolean) => {
-  marketStore.setConnected(isConnected);
-};
+import { Ticker, MiniTicker } from "@/types/binance";
 
 export const setMarketLoadingMutator = (isLoading: boolean) => {
   marketStore.setLoading(isLoading);
-};
-
-export const setHasReceivedDataMutator = (hasData: boolean) => {
-  marketStore.setHasReceivedData(hasData);
 };
 
 export const setMarketErrorMutator = (error: string | null) => {
   marketStore.setError(error);
 };
 
+export const setTickersMutator = (tickers: Ticker[]) => {
+  const tickerMap = new Map<string, Ticker>();
+  for (const t of tickers) {
+    tickerMap.set(t.symbol, t);
+  }
+  marketStore.setTickers(tickerMap);
+  marketStore.setLoading(false);
+};
+
 export const toggleFavoriteMutator = (symbol: string) => {
   marketStore.toggleFavorite(symbol);
 };
 
-export const processMiniTickerMutator = (data: MiniTicker) => {
-  const symbol = data.s;
-  const priceChange = ((parseFloat(data.c) - parseFloat(data.o)) / parseFloat(data.o) * 100).toFixed(2);
-  
-  marketStore.updateTicker(symbol, data.c, priceChange);
+export const processMiniTickerMutator = (items: MiniTicker[]) => {
+  for (const ticker of items) {
+    const symbol = ticker.s;
+    const priceChange = (
+      ((parseFloat(ticker.c) - parseFloat(ticker.o)) / parseFloat(ticker.o)) *
+      100
+    ).toFixed(2);
+    marketStore.updateTicker(symbol, ticker.c, priceChange);
+  }
 };

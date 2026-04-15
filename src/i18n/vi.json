@@ -19,7 +19,15 @@
     "favorites": "Yêu thích",
     "marketPulse": "Các coin được đề xuất trong 24 giờ",
     "marketOverview": "Top tài sản staking",
-    "pairs": "cặp"
+    "pairs": "cặp",
+    "table": {
+      "pair": "Cặp",
+      "lastPrice": "Giá mới nhất",
+      "change": "Thay đổi 24h"
+    }
+  },
+  "pagination": {
+    "showing": "Hiển thị {{start}} đến {{end}} của {{total}} mục"
   },
   "tokenDetail": {
     "title": "Chi tiết token",

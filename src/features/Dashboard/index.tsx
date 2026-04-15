@@ -1,32 +1,65 @@
-import { useMemo, useState } from "react";
-import { observer } from "mobx-react-lite";
-import { useTranslation } from "react-i18next";
 import { useStore } from "@/stores";
-import TickerCard from "./TickerCard";
+import { observer } from "mobx-react-lite";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { DataTable, TableColumn } from "@/components/DataTable";
 
 const Dashboard = observer(function Dashboard() {
   const { t } = useTranslation();
   const { marketStore } = useStore();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
 
-  // WebSocket is initialized in App.tsx via initializeMarketData()
+  const arr = Array.from(marketStore.tickers.values());
 
-  const tickers = useMemo(() => {
-    const arr = Array.from(marketStore.tickers.values());
-    const favorites = Array.from(marketStore.favorites);
+  const filtered = arr.filter((ticker) =>
+    ticker.symbol.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
-    const filtered = arr.filter((ticker) =>
-      ticker.symbol.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+  const tickers = [...filtered].sort((a, b) => {
+    const aFav = marketStore.favorites.has(a.symbol) ? 0 : 1;
+    const bFav = marketStore.favorites.has(b.symbol) ? 0 : 1;
+    return aFav - bFav;
+  });
 
-    const sorted = [...filtered].sort((a, b) => {
-      const aFav = favorites.includes(a.symbol) ? 0 : 1;
-      const bFav = favorites.includes(b.symbol) ? 0 : 1;
-      return aFav - bFav;
-    });
+  const hasData = tickers.length > 0;
 
-    return sorted;
-  }, [marketStore.tickers, marketStore.favorites, searchQuery]);
+  const handleRowClick = (ticker: { symbol: string }) => {
+    navigate(`/token/${ticker.symbol}`);
+  };
+
+  const columns: TableColumn[] = [
+    {
+      key: 'symbol',
+      headerKey: 'dashboard.table.pair',
+      render: (item) => (
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{item.symbol.replace('USDT', '')}</span>
+          <span className="text-xs text-[--text-muted]">/USDT</span>
+        </div>
+      ),
+    },
+    {
+      key: 'price',
+      headerKey: 'dashboard.table.lastPrice',
+      className: 'font-mono',
+      render: (item) => `$${parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    },
+    {
+      key: 'priceChangePercent',
+      headerKey: 'dashboard.table.change',
+      render: (item) => {
+        const change = parseFloat(item.priceChangePercent);
+        return (
+          <span className={change >= 0 ? 'text-[--success]' : 'text-[--danger]'}>
+            {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -56,7 +89,10 @@ const Dashboard = observer(function Dashboard() {
             type="text"
             placeholder={t("dashboard.search")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPageIndex(0);
+            }}
             className="w-full rounded-2xl border border-(--border) bg-[rgba(15,23,42,0.04)] dark:bg-white/5 px-4 py-3 text-(--text) placeholder:text-(--text-muted) outline-none transition focus:border-(--accent-border)"
           />
         </div>
@@ -74,27 +110,25 @@ const Dashboard = observer(function Dashboard() {
         </div>
       )}
 
-      {!marketStore.isLoading && !marketStore.hasReceivedData && (
-        <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
-          {t("dashboard.connecting")}
-        </div>
-      )}
-
-      {!marketStore.isLoading && marketStore.hasReceivedData && tickers.length === 0 && (
+      {!marketStore.isLoading && !hasData && (
         <div className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6 text-(--text-muted)">
           {t("dashboard.noData")}
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1">
-        {tickers.map((ticker) => (
-          <TickerCard
-            key={ticker.symbol}
-            ticker={ticker}
-            isFavorite={marketStore.favorites.has(ticker.symbol)}
+      {!marketStore.isLoading && hasData && (
+        <section className="rounded-[28px] border border-(--border) bg-(--surface) shadow-[0_30px_90px_rgba(0,0,0,0.28)] p-6">
+          <DataTable 
+            data={tickers} 
+            columns={columns}
+            pageSize={10} 
+            pageIndex={pageIndex}
+            onPageChange={setPageIndex}
+            onRowClick={handleRowClick}
+            emptyMessage={t("dashboard.noData")}
           />
-        ))}
-      </div>
+        </section>
+      )}
     </div>
   );
 });

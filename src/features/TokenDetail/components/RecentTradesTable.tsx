@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Trade } from '@/types/binance';
-import DataTable, { Column } from '@/components/DataTable';
+import { SimpleDataTable, type Column } from '@/components/DataTable';
 
 interface RecentTradesTableProps {
   trades: Trade[];
@@ -14,7 +14,7 @@ export default function RecentTradesTable({ trades, maxRows = 50 }: RecentTrades
     { 
       key: 'price', 
       header: 'Giá (USDT)',
-      render: (trade) => {
+      render: (_value, trade) => {
         const cls = trade.isBuyerMaker ? 'text-(--danger)' : 'text-(--success)';
         return <span className={cls}>{parseFloat(trade.price).toFixed(2)}</span>;
       }
@@ -22,24 +22,23 @@ export default function RecentTradesTable({ trades, maxRows = 50 }: RecentTrades
     { 
       key: 'qty', 
       header: 'Số lượng (ETH)',
-      render: (trade) => parseFloat(trade.qty).toFixed(4),
+      render: (_value, trade) => parseFloat(trade.qty).toFixed(4),
     },
     { 
       key: 'time', 
       header: 'Thời gian',
       className: 'text-(--text-muted)',
-      render: (trade) => new Date(trade.time).toLocaleTimeString(),
+      render: (_value, trade) => new Date(trade.time).toLocaleTimeString(),
     },
   ];
 
   return (
-    <DataTable
+    <SimpleDataTable
       columns={columns}
       data={trades}
       maxRows={maxRows}
       keyExtractor={(trade) => trade.id}
       emptyMessage={t('tokenDetail.noTrades') || 'No recent trades'}
-      maxHeight="400px"
     />
   );
 }

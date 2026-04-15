@@ -1,4 +1,4 @@
-export { default as DataTable, type Column } from '@/components/DataTable';
+export { DataTable, SimpleDataTable, type Column } from '@/components/DataTable';
 export { default as OrderBookTable } from './OrderBookTable';
 export { default as RecentTradesTable } from './RecentTradesTable';
 export { default as OrderBookSection } from './OrderBookSection';
