@@ -30,7 +30,7 @@ yarn preview
 ## Tech Stack
 
 - **React 19** + TypeScript + Vite
-- **SatchelJS** - State management
+- **Mobx** - State management
 - **TailwindCSS v4** - Styling
 - **i18next** - Localization (EN, VI)
 - **Lightweight Charts** - TradingView charts
@@ -38,7 +38,7 @@ yarn preview
 
 ## Architecture
 
-The project follows the **SatchelJS** pattern:
+The project follows the **Mobx** pattern:
 
 ```
 Action → Mutator → Store → React Observer
@@ -61,7 +61,7 @@ Orchestrator (async: API, WebSocket)
 
 ### Key Architectural Decisions
 
-1. **SatchelJS over Redux/Context** - Unidirectional data flow with explicit action/mutator separation makes state changes predictable and testable. Orchestrators handle async operations cleanly.
+1. **Mobx over Redux/Context** - Unidirectional data flow with explicit action/mutator separation makes state changes predictable and testable. Orchestrators handle async operations cleanly.
 
 2. **TailwindCSS v4** - Uses CSS `@import "tailwindcss"` directly without PostCSS configuration. Simpler setup, faster builds.
 

@@ -878,7 +878,6 @@ __metadata:
     react-dom: "npm:^19.0.0"
     react-i18next: "npm:^17.0.2"
     react-router-dom: "npm:^7.14.1"
-    satcheljs: "npm:^4.3.1"
     tailwindcss: "npm:^4.2.2"
     typescript: "npm:~6.0.2"
     vite: "npm:^8.0.4"
@@ -1680,18 +1679,6 @@ __metadata:
   version: 2.1.2
   resolution: "safer-buffer@npm:2.1.2"
   checksum: 10c0/7e3c8b2e88a1841c9671094bbaeebd94448111dd90a81a1f606f3f67708a6ec57763b3b47f06da09fc6054193e0e6709e77325415dc8422b04497a8070fa02d4
-  languageName: node
-  linkType: hard
-
-"satcheljs@npm:^4.3.1":
-  version: 4.3.1
-  resolution: "satcheljs@npm:4.3.1"
-  peerDependencies:
-    mobx: ">=4.4.0"
-    mobx-react: ">=5.2.0"
-    react: ">=15.4.0"
-    react-dom: ">=15.4.0"
-  checksum: 10c0/393218fa0fa94103f6641b258e7b82a6243c41383baf6371a9698edbde7e0fa9efd6829a71b025d5cd559ae9ba832620b208a131518fa6d0350824f9fb2040a1
   languageName: node
   linkType: hard
 
