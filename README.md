@@ -41,7 +41,7 @@ yarn preview
 The project follows the **Mobx** pattern:
 
 ```
-Action → Mutator → Store → React Observer
+Mutator → Store → React Observer
    ↑
 Orchestrator (async: API, WebSocket)
 ```
@@ -51,7 +51,6 @@ Orchestrator (async: API, WebSocket)
 | Directory | Purpose |
 |-----------|---------|
 | `stores/` | State interfaces |
-| `actions/` | Action creators |
 | `mutators/` | Pure state transformers |
 | `orchestrators/` | Side effects (API, WebSocket) |
 | `services/` | API clients |
